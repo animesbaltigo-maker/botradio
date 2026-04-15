@@ -54,7 +54,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     try:
-        is_member = await _gate(context).is_channel_member(context, user.id)
+        is_member = await _gate(context).is_channel_member(context, user.id, force_refresh=True)
     except Exception as exc:
         await message.reply_text(build_error_text(locale, exc))
         return
