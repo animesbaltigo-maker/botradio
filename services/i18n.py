@@ -597,6 +597,40 @@ for _locale, _entries in BROADCAST_TRANSLATIONS.items():
     TRANSLATIONS.setdefault(_locale, {}).update(_entries)
 
 
+CHANNEL_POST_TRANSLATIONS: dict[str, dict[str, str]] = {
+    "pt": {
+        "errors.admin_only": "Você não tem permissão para usar este comando.",
+        "postanime.usage": "📡 <b>Como usar o /postanime</b>\n\n<blockquote><b>Como usar:</b> envie o nome do anime para montar a postagem no canal.\n<b>Exemplo:</b> <code>/postanime one piece</code>\n<b>Resultado:</b> o bot procura o anime e publica o card no canal oficial.</blockquote>",
+        "postanime.loading": "<b>Montando postagem...</b>\nAguarde um instante.",
+        "postanime.not_found": "<b>Não encontrei esse anime.</b>",
+        "postanime.resolve_error": "<b>Não consegui identificar o anime certo.</b>",
+        "postanime.post_error": "<b>Não consegui postar esse anime.</b>\n\n{error}",
+        "postanime.success": "<b>Postagem enviada com sucesso.</b>\n\n<code>{title}</code>",
+    },
+    "en": {
+        "errors.admin_only": "You do not have permission to use this command.",
+        "postanime.usage": "📡 <b>How to use /postanime</b>\n\n<blockquote><b>How to use:</b> send the anime name to build the channel post.\n<b>Example:</b> <code>/postanime one piece</code>\n<b>Result:</b> the bot searches the anime and publishes the card in the official channel.</blockquote>",
+        "postanime.loading": "<b>Building the post...</b>\nPlease wait a moment.",
+        "postanime.not_found": "<b>I couldn't find that anime.</b>",
+        "postanime.resolve_error": "<b>I couldn't identify the correct anime.</b>",
+        "postanime.post_error": "<b>I couldn't post this anime.</b>\n\n{error}",
+        "postanime.success": "<b>Post sent successfully.</b>\n\n<code>{title}</code>",
+    },
+    "es": {
+        "errors.admin_only": "No tienes permiso para usar este comando.",
+        "postanime.usage": "📡 <b>Cómo usar /postanime</b>\n\n<blockquote><b>Cómo usar:</b> envía el nombre del anime para montar la publicación en el canal.\n<b>Ejemplo:</b> <code>/postanime one piece</code>\n<b>Resultado:</b> el bot busca el anime y publica la tarjeta en el canal oficial.</blockquote>",
+        "postanime.loading": "<b>Montando la publicación...</b>\nEspera un momento.",
+        "postanime.not_found": "<b>No encontré ese anime.</b>",
+        "postanime.resolve_error": "<b>No pude identificar el anime correcto.</b>",
+        "postanime.post_error": "<b>No pude publicar este anime.</b>\n\n{error}",
+        "postanime.success": "<b>Publicación enviada con éxito.</b>\n\n<code>{title}</code>",
+    },
+}
+
+for _locale, _entries in CHANNEL_POST_TRANSLATIONS.items():
+    TRANSLATIONS.setdefault(_locale, {}).update(_entries)
+
+
 class _SafeParams(dict[str, object]):
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
