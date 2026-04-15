@@ -23,7 +23,7 @@ from services.radio_ui import (
     build_inline_result_caption,
     build_inline_result_description,
 )
-from services.user_state import get_language
+from services.user_state import has_selected_language
 
 
 INLINE_PAGE_SIZE = 10
@@ -67,7 +67,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         start_parameter="start",
     )
 
-    if not get_language(context):
+    if not has_selected_language(context):
         result = InlineQueryResultArticle(
             id="gate-language",
             title="Rádio Animes",
@@ -87,7 +87,7 @@ async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     try:
-        is_member = await gate.is_channel_member(context, user.id)
+        is_member = await gate.is_channel_member(context, user.id, force_refresh=True)
     except Exception as exc:
         result = InlineQueryResultArticle(
             id="gate-channel-error",
