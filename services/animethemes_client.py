@@ -178,33 +178,41 @@ class AnimeThemesClient:
             return []
 
         results: dict[str, AnimeCandidate] = {}
-        attempts = max(3, min(12, requested // 10 + 4))
+        rounds = max(2, min(20, requested // 5 + 3))
+        parallel_requests = max(4, min(10, requested))
 
-        for _ in range(attempts):
+        for _ in range(rounds):
             remaining = requested - len(results)
             if remaining <= 0:
                 break
 
-            payload = await self._get_json(
-                "/anime",
-                {
-                    "sort": "random",
-                    "filter[has]": "animethemes",
-                    "page[size]": min(max(remaining, 10), 50),
-                    "include": SEARCH_INCLUDE,
-                },
+            batch_size = min(parallel_requests, max(remaining, 1))
+            payloads = await asyncio.gather(
+                *[
+                    self._get_json(
+                        "/anime",
+                        {
+                            "sort": "random",
+                            "page[size]": 1,
+                            "filter[has]": "animethemes",
+                            "include": SEARCH_INCLUDE,
+                        },
+                    )
+                    for _ in range(batch_size)
+                ],
+                return_exceptions=True,
             )
-            anime_items = self._anime_items(payload)
-            if not anime_items:
-                continue
 
-            for anime in anime_items:
+            for payload in payloads:
+                if isinstance(payload, Exception) or not isinstance(payload, dict):
+                    continue
+                anime = self._first_anime(payload)
+                if not anime:
+                    continue
                 candidate = self._to_anime_candidate(anime, None)
                 if not candidate or not candidate.anime_slug:
                     continue
                 results.setdefault(candidate.anime_slug, candidate)
-                if len(results) >= requested:
-                    break
 
         return list(results.values())[:requested]
 
