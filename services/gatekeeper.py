@@ -72,7 +72,7 @@ class Gatekeeper:
             return None
 
         try:
-            is_member = await self.is_channel_member(context, user.id)
+            is_member = await self.is_channel_member(context, user.id, force_refresh=True)
         except LocalizedError as exc:
             await message.reply_text(t(locale, exc.key, **exc.params))
             await delete_message_safely(message)
@@ -111,7 +111,7 @@ class Gatekeeper:
             return None
 
         try:
-            is_member = await self.is_channel_member(context, user.id)
+            is_member = await self.is_channel_member(context, user.id, force_refresh=True)
         except LocalizedError as exc:
             try:
                 await query.answer(t(locale, exc.key, **exc.params)[:180], show_alert=True)
@@ -155,7 +155,7 @@ class Gatekeeper:
             )
         except Exception as exc:
             LOGGER.exception("Falha ao validar membro do canal", exc_info=exc)
-            if stale_value is not None:
+            if stale_value is False:
                 return stale_value
             raise LocalizedError("gate.channel_check_error") from exc
 
