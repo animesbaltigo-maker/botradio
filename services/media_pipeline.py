@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -53,13 +54,15 @@ class MediaPipeline:
         self._http = httpx.AsyncClient(
             timeout=httpx.Timeout(timeout, connect=min(timeout, 10.0), pool=10.0),
             follow_redirects=True,
-            limits=httpx.Limits(max_connections=80, max_keepalive_connections=30),
+            limits=httpx.Limits(max_connections=120, max_keepalive_connections=60),
             headers={"User-Agent": "RadioAnimesBot/2.0"},
         )
-        self._download_semaphore = asyncio.Semaphore(12)
+        self._download_semaphore = asyncio.Semaphore(20)
         self._convert_semaphore = asyncio.Semaphore(max(2, min(4, os.cpu_count() or 2)))
         self._prepare_lock = asyncio.Lock()
+        self._download_lock = asyncio.Lock()
         self._prepare_tasks: dict[int, asyncio.Task[PreparedTrack]] = {}
+        self._download_tasks: dict[str, asyncio.Task[None]] = {}
 
     async def close(self) -> None:
         await self._http.aclose()
@@ -104,9 +107,10 @@ class MediaPipeline:
         thumbnail_path: Path | None = None
         image_source: Path | None = None
         if track.image_link:
+            image_key = self._stable_key(track.image_link)
             image_ext = self._guess_extension(track.image_link, default=".img")
-            image_source = self._image_src_dir / f"{track.anime_id}{image_ext}"
-            thumbnail_path = self._thumb_dir / f"{track.anime_id}.jpg"
+            image_source = self._image_src_dir / f"{track.anime_id}-{image_key}{image_ext}"
+            thumbnail_path = self._thumb_dir / f"{track.anime_id}-{image_key}.jpg"
             await self._download_if_missing(track.image_link, image_source)
             if not thumbnail_path.exists() or thumbnail_path.stat().st_size == 0:
                 async with self._convert_semaphore:
@@ -123,8 +127,10 @@ class MediaPipeline:
         if not mp3_path.exists() or mp3_path.stat().st_size == 0:
             return None
 
-        thumbnail_path = self._thumb_dir / f"{track.anime_id}.jpg"
-        if not thumbnail_path.exists() or thumbnail_path.stat().st_size == 0:
+        thumbnail_path = None
+        if track.image_link:
+            thumbnail_path = self._thumb_dir / f"{track.anime_id}-{self._stable_key(track.image_link)}.jpg"
+        if not thumbnail_path or not thumbnail_path.exists() or thumbnail_path.stat().st_size == 0:
             thumbnail_path = None
         return PreparedTrack(mp3_path=mp3_path, thumbnail_path=thumbnail_path)
 
@@ -134,6 +140,25 @@ class MediaPipeline:
         if not url:
             raise LocalizedError("errors.media_download")
 
+        key = str(target_path)
+        async with self._download_lock:
+            existing_task = self._download_tasks.get(key)
+            if existing_task is None:
+                existing_task = asyncio.create_task(self._download_if_missing_impl(url, target_path))
+                self._download_tasks[key] = existing_task
+                creator = True
+            else:
+                creator = False
+
+        try:
+            await existing_task
+        finally:
+            if creator:
+                async with self._download_lock:
+                    if self._download_tasks.get(key) is existing_task:
+                        self._download_tasks.pop(key, None)
+
+    async def _download_if_missing_impl(self, url: str, target_path: Path) -> None:
         temp_path = target_path.with_suffix(target_path.suffix + ".tmp")
         if temp_path.exists():
             temp_path.unlink()
@@ -225,9 +250,9 @@ class MediaPipeline:
             "-frames:v",
             "1",
             "-vf",
-            "scale=320:-2",
+            "scale=640:-2",
             "-q:v",
-            "4",
+            "2",
             str(temp_path),
         ]
         self._run_ffmpeg(command, "errors.thumbnail_create")
@@ -252,6 +277,10 @@ class MediaPipeline:
         return default
 
     @staticmethod
+    def _stable_key(value: str) -> str:
+        return hashlib.sha1(value.encode("utf-8")).hexdigest()[:12]
+
+    @staticmethod
     def _resolve_ffmpeg(explicit_path: str) -> Path:
         candidates = []
         if explicit_path:
@@ -266,4 +295,3 @@ class MediaPipeline:
                 return candidate
 
         raise LocalizedError("errors.ffmpeg_missing")
-
