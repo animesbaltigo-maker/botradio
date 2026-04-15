@@ -169,6 +169,45 @@ class AnimeThemesClient:
             raise AnimeThemesClientError("errors.no_match_for_filter")
         return choices
 
+    async def get_random_anime_candidates(
+        self,
+        limit: int,
+    ) -> list[AnimeCandidate]:
+        requested = max(0, int(limit))
+        if requested <= 0:
+            return []
+
+        results: dict[str, AnimeCandidate] = {}
+        attempts = max(3, min(12, requested // 10 + 4))
+
+        for _ in range(attempts):
+            remaining = requested - len(results)
+            if remaining <= 0:
+                break
+
+            payload = await self._get_json(
+                "/anime",
+                {
+                    "sort": "random",
+                    "filter[has]": "animethemes",
+                    "page[size]": min(max(remaining, 10), 50),
+                    "include": SEARCH_INCLUDE,
+                },
+            )
+            anime_items = self._anime_items(payload)
+            if not anime_items:
+                continue
+
+            for anime in anime_items:
+                candidate = self._to_anime_candidate(anime, None)
+                if not candidate or not candidate.anime_slug:
+                    continue
+                results.setdefault(candidate.anime_slug, candidate)
+                if len(results) >= requested:
+                    break
+
+        return list(results.values())[:requested]
+
     async def search_anime(
         self,
         query: str,
