@@ -91,7 +91,7 @@ class AnimeThemesClient:
         self._http = httpx.AsyncClient(
             base_url=base_url.rstrip("/"),
             timeout=httpx.Timeout(timeout, connect=min(timeout, 10.0), pool=10.0),
-            limits=httpx.Limits(max_connections=100, max_keepalive_connections=40),
+            limits=httpx.Limits(max_connections=140, max_keepalive_connections=70),
             headers={
                 "Accept": "application/json",
                 "User-Agent": "RadioAnimesBot/2.0",
@@ -478,14 +478,55 @@ class AnimeThemesClient:
         images = anime.get("images") or []
         if not isinstance(images, list):
             return None
-        for facet in ("Large Cover", "Small Cover"):
-            for image in images:
-                if image.get("facet") == facet and image.get("link"):
-                    return str(image["link"])
+        ranked: list[tuple[int, int, int, int, str]] = []
         for image in images:
-            if image.get("link"):
-                return str(image["link"])
-        return None
+            if not isinstance(image, dict):
+                continue
+            link = image.get("link")
+            if not link:
+                continue
+            facet = str(image.get("facet") or "")
+            width = int(image.get("width") or 0)
+            height = int(image.get("height") or 0)
+            resolution = int(image.get("resolution") or 0)
+            ranked.append(
+                (
+                    AnimeThemesClient._image_facet_rank(facet),
+                    width * height,
+                    resolution,
+                    max(width, height),
+                    str(link),
+                )
+            )
+        if not ranked:
+            return None
+        ranked.sort(reverse=True)
+        return ranked[0][4]
+
+    @staticmethod
+    def _image_facet_rank(facet: str) -> int:
+        normalized = re.sub(r"[^a-z]+", " ", (facet or "").lower()).strip()
+        if not normalized:
+            return 0
+        priorities = {
+            "large cover": 120,
+            "cover": 110,
+            "poster": 105,
+            "large banner": 100,
+            "banner": 95,
+            "header": 90,
+            "small cover": 80,
+            "small banner": 70,
+        }
+        if normalized in priorities:
+            return priorities[normalized]
+        if "large" in normalized:
+            return 75
+        if "cover" in normalized:
+            return 70
+        if "banner" in normalized:
+            return 65
+        return 10
 
     @staticmethod
     def _pick_info_link(anime: dict[str, Any]) -> str | None:
@@ -557,4 +598,3 @@ class AnimeThemesClient:
     def _search_tokens(cls, value: str) -> list[str]:
         normalized = cls._normalize_search_value(value)
         return normalized.split()
-
