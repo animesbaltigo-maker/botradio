@@ -37,6 +37,7 @@ from config import (
 from handlers.broadcast import broadcast_callbacks, broadcast_command, broadcast_message_router
 from handlers.inline import inline_query
 from handlers.language import gate_callback, language_callback, language_command
+from handlers.posts import postanime_command
 from handlers.radio import anime_command, ed_command, op_command, radio, radio_callback
 from handlers.start import start
 from handlers.tracking import track_user_update
@@ -172,6 +173,7 @@ def main() -> None:
     app.add_handler(CommandHandler(["idioma", "language", "idioma_bot"], language_command))
     if ADMIN_IDS:
         app.add_handler(CommandHandler(["broadcast", "bc"], broadcast_command))
+        app.add_handler(CommandHandler("postanime", postanime_command))
     app.add_handler(InlineQueryHandler(inline_query))
     app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, broadcast_message_router))
     app.add_handler(CallbackQueryHandler(language_callback, pattern=r"^lang:"))
