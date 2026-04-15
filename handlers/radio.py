@@ -41,9 +41,6 @@ from services.radio_ui import (
     build_usage_text,
 )
 from services.media_pipeline import MediaPipeline
-from services.user_state import get_resolved_language
-
-
 LOGGER = logging.getLogger(__name__)
 
 MESSAGE_STATE_KEY = "radio_message_state"
@@ -642,23 +639,20 @@ async def anime_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not message:
         return
 
-    query = " ".join(context.args).strip()
-    if not query:
-        locale = get_resolved_language(context, getattr(update.effective_user, "language_code", None))
-        await message.reply_text(build_usage_text(locale, "anime"), parse_mode=ParseMode.HTML)
-        await delete_message_safely(message)
-        return
-
-    access = await _gate(context).require_message_access(
-        update,
-        context,
-        pending_action=make_query_action(query, KIND_ANY),
-    )
+    access = await _gate(context).require_message_access(update, context)
     if not access:
         return
 
+    query = " ".join(context.args).strip()
+    if not query:
+        await message.reply_text(build_usage_text(access.locale, "anime"), parse_mode=ParseMode.HTML)
+        await delete_message_safely(message)
+        return
+
+    action = make_query_action(query, KIND_ANY)
+
     try:
-        await execute_pending_action(context, message, make_query_action(query, KIND_ANY), access.locale)
+        await execute_pending_action(context, message, action, access.locale)
     except Exception as exc:
         await _send_client_error(message, exc, access.locale)
         return
