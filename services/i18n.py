@@ -631,6 +631,48 @@ for _locale, _entries in CHANNEL_POST_TRANSLATIONS.items():
     TRANSLATIONS.setdefault(_locale, {}).update(_entries)
 
 
+POSTANIME_BATCH_TRANSLATIONS: dict[str, dict[str, str]] = {
+    "pt": {
+        "errors.admin_only": "Voce nao tem permissao para usar este comando.",
+        "postanime.usage": "<b>Como usar o /postanime</b>\n\n<blockquote><b>Como usar:</b> envie o nome do anime para postar um card ou envie um numero para lote aleatorio.\n<b>Exemplos:</b> <code>/postanime one piece</code> | <code>/postanime 10</code>\n<b>Resultado:</b> o bot publica um anime especifico ou uma fila de cards no canal oficial.</blockquote>",
+        "postanime.not_found": "<b>Nao encontrei esse anime.</b>",
+        "postanime.resolve_error": "<b>Nao consegui identificar o anime certo.</b>",
+        "postanime.post_error": "<b>Nao consegui postar esse anime.</b>\n\n{error}",
+        "postanime.bulk_invalid_count": "<b>Quantidade invalida.</b>\n\nUse um numero entre <code>1</code> e <code>{max_count}</code>.",
+        "postanime.bulk_already_running": "<b>Ja existe um lote do /postanime em andamento.</b>",
+        "postanime.bulk_started": "<b>Fila iniciada com sucesso.</b>\n\n<b>Total solicitado:</b> <code>{count}</code>\n<b>Intervalo:</b> <code>{delay}</code>",
+        "postanime.bulk_fetching": "<b>Montando lote de animes...</b>\n\n<b>Total solicitado:</b> <code>{count}</code>\n<b>Status:</b> Separando os cards aleatorios.",
+        "postanime.bulk_empty": "<b>Nao consegui montar o lote agora.</b>",
+        "postanime.bulk_progress": "<b>Postagem em lote em andamento.</b>\n\n<b>Enviados:</b> <code>{sent}</code>\n<b>Falhas:</b> <code>{failed}</code>\n<b>Processados:</b> <code>{processed}/{total}</code>\n<b>Atual:</b> <code>{current}</code>",
+        "postanime.bulk_finished": "<b>Postagem em lote finalizada.</b>\n\n<b>Enviados:</b> <code>{sent}</code>\n<b>Falhas:</b> <code>{failed}</code>\n<b>Total:</b> <code>{total}</code>",
+    },
+    "en": {
+        "postanime.usage": "<b>How to use /postanime</b>\n\n<blockquote><b>How to use:</b> send the anime name to post one card or send a number for a random batch.\n<b>Examples:</b> <code>/postanime one piece</code> | <code>/postanime 10</code>\n<b>Result:</b> the bot publishes one anime card or a batch queue in the official channel.</blockquote>",
+        "postanime.bulk_invalid_count": "<b>Invalid amount.</b>\n\nUse a number between <code>1</code> and <code>{max_count}</code>.",
+        "postanime.bulk_already_running": "<b>A /postanime batch is already running.</b>",
+        "postanime.bulk_started": "<b>Batch queue started successfully.</b>\n\n<b>Requested total:</b> <code>{count}</code>\n<b>Interval:</b> <code>{delay}</code>",
+        "postanime.bulk_fetching": "<b>Building the anime batch...</b>\n\n<b>Requested total:</b> <code>{count}</code>\n<b>Status:</b> Collecting random anime cards.",
+        "postanime.bulk_empty": "<b>I couldn't build the batch right now.</b>",
+        "postanime.bulk_progress": "<b>Batch posting in progress.</b>\n\n<b>Sent:</b> <code>{sent}</code>\n<b>Failed:</b> <code>{failed}</code>\n<b>Processed:</b> <code>{processed}/{total}</code>\n<b>Current:</b> <code>{current}</code>",
+        "postanime.bulk_finished": "<b>Batch posting finished.</b>\n\n<b>Sent:</b> <code>{sent}</code>\n<b>Failed:</b> <code>{failed}</code>\n<b>Total:</b> <code>{total}</code>",
+    },
+    "es": {
+        "postanime.usage": "<b>Como usar /postanime</b>\n\n<blockquote><b>Como usar:</b> envia el nombre del anime para publicar una tarjeta o envia un numero para un lote aleatorio.\n<b>Ejemplos:</b> <code>/postanime one piece</code> | <code>/postanime 10</code>\n<b>Resultado:</b> el bot publica una tarjeta especifica o una cola de tarjetas en el canal oficial.</blockquote>",
+        "postanime.not_found": "<b>No encontre ese anime.</b>",
+        "postanime.bulk_invalid_count": "<b>Cantidad invalida.</b>\n\nUsa un numero entre <code>1</code> y <code>{max_count}</code>.",
+        "postanime.bulk_already_running": "<b>Ya hay un lote de /postanime en curso.</b>",
+        "postanime.bulk_started": "<b>Cola iniciada con exito.</b>\n\n<b>Total solicitado:</b> <code>{count}</code>\n<b>Intervalo:</b> <code>{delay}</code>",
+        "postanime.bulk_fetching": "<b>Montando el lote de animes...</b>\n\n<b>Total solicitado:</b> <code>{count}</code>\n<b>Estado:</b> Separando las tarjetas aleatorias.",
+        "postanime.bulk_empty": "<b>No pude montar el lote ahora mismo.</b>",
+        "postanime.bulk_progress": "<b>Publicacion en lote en curso.</b>\n\n<b>Enviados:</b> <code>{sent}</code>\n<b>Fallos:</b> <code>{failed}</code>\n<b>Procesados:</b> <code>{processed}/{total}</code>\n<b>Actual:</b> <code>{current}</code>",
+        "postanime.bulk_finished": "<b>Publicacion en lote finalizada.</b>\n\n<b>Enviados:</b> <code>{sent}</code>\n<b>Fallos:</b> <code>{failed}</code>\n<b>Total:</b> <code>{total}</code>",
+    },
+}
+
+for _locale, _entries in POSTANIME_BATCH_TRANSLATIONS.items():
+    TRANSLATIONS.setdefault(_locale, {}).update(_entries)
+
+
 class _SafeParams(dict[str, object]):
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
