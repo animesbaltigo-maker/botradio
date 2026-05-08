@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from telegram import Update
+import os
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
@@ -17,7 +19,11 @@ from services.user_state import (
 )
 
 
-BANNER_URL = "https://photo.chelpbot.me/AgACAgEAAxkBajdq32nec9iWglPIl5GfbuGfphLP6VoyAAIcDGsbjonxRu9aubnT6Bk0AQADAgADdwADOwQ/photo.jpg"
+BANNER_URL = "https://photo.chelpbot.me/AgACAgEAAxkBa-uer2n-YkOx_c7E6edZNq5gcFb9oC3eAAIcDGsbjonxRu9aubnT6Bk0AQADAgADdwADOwQ/photo.jpg"
+BALTIGO_UNIVERSE_WEBAPP_URL = os.getenv(
+    "BALTIGO_UNIVERSE_WEBAPP_URL",
+    "https://rough-double-remarkable-north.trycloudflare.com/miniapp/bots/index.html",
+).strip()
 
 
 def _gate(context: ContextTypes.DEFAULT_TYPE) -> Gatekeeper:
@@ -32,6 +38,9 @@ async def _send_start_banner(message, locale: str):
         photo=BANNER_URL,
         caption=build_start_caption(locale),
         parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("⚔️ Universo Baltigo", web_app=WebAppInfo(url=BALTIGO_UNIVERSE_WEBAPP_URL))]]
+        ),
     )
 
 
