@@ -35,6 +35,8 @@ from config import (
     RADIO_ANIMES_CHANNEL_URL,
 )
 from handlers.broadcast import broadcast_callbacks, broadcast_command, broadcast_message_router
+from handlers.control_block import control_block_callback_guard, control_block_message_guard
+from services.control_agent import start_control_agent, stop_control_agent
 from handlers.inline import inline_query
 from handlers.language import gate_callback, language_callback, language_command
 from handlers.posts import postanime_command
@@ -75,6 +77,7 @@ async def _set_localized_commands(app: Application) -> None:
 
 
 async def post_init(app: Application) -> None:
+    await start_control_agent(app)
     app.bot_data["animethemes_client"] = AnimeThemesClient(
         ANIMETHEMES_BASE_URL,
         timeout=ANIMETHEMES_REQUEST_TIMEOUT,
@@ -92,6 +95,7 @@ async def post_init(app: Application) -> None:
 
 
 async def post_shutdown(app: Application) -> None:
+    await stop_control_agent(app)
     client = app.bot_data.get("animethemes_client")
     if isinstance(client, AnimeThemesClient):
         await client.close()
@@ -163,6 +167,9 @@ def main() -> None:
     )
     builder = _attach_optional_rate_limiter(builder)
     app = builder.build()
+
+    app.add_handler(CallbackQueryHandler(control_block_callback_guard, pattern=r".*"), group=-100)
+    app.add_handler(MessageHandler(filters.ALL, control_block_message_guard), group=-100)
 
     app.add_handler(TypeHandler(Update, track_user_update), group=-1)
     app.add_handler(CommandHandler("start", start))
