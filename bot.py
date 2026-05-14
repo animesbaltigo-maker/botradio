@@ -7,6 +7,7 @@ from telegram import BotCommand, BotCommandScopeAllPrivateChats, Update
 from telegram.ext import (
     AIORateLimiter,
     Application,
+    ApplicationHandlerStop,
     CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
@@ -105,6 +106,25 @@ async def post_shutdown(app: Application) -> None:
         await pipeline.close()
 
 
+async def required_channel_guard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    message = update.effective_message
+    user = update.effective_user
+    gate = context.application.bot_data.get("gatekeeper")
+    if not message or not user or not isinstance(gate, Gatekeeper):
+        raise ApplicationHandlerStop
+
+    locale = gate.resolve_locale(update, context)
+    try:
+        is_member = await gate.is_channel_member(context, user.id, force_refresh=True)
+    except Exception as exc:
+        await message.reply_text(t(locale, "gate.channel_check_error"))
+        raise ApplicationHandlerStop from exc
+
+    if not is_member:
+        await gate.send_channel_gate(message, locale)
+        raise ApplicationHandlerStop
+
+
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     LOGGER.error("Erro no bot: %r", context.error)
     traceback.print_exception(
@@ -173,6 +193,7 @@ def main() -> None:
     app.add_handler(MessageHandler(filters.ALL, control_block_message_guard), group=-100)
 
     app.add_handler(TypeHandler(Update, track_user_update), group=-1)
+    app.add_handler(MessageHandler(filters.COMMAND, required_channel_guard), group=-90)
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("radio", radio))
     app.add_handler(CommandHandler("anime", anime_command))

@@ -51,7 +51,7 @@ def _env_int_tuple(name: str) -> tuple[int, ...]:
 
 
 def _env_str_tuple(name: str, default: str) -> tuple[str, ...]:
-    raw = _env_str(name, default, allow_blank=True)
+    raw = os.getenv(name, "").strip() or default
     values = [chunk.strip() for chunk in raw.replace(";", ",").split(",") if chunk.strip()]
     return tuple(dict.fromkeys(values))
 
