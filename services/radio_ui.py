@@ -214,13 +214,36 @@ def build_language_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def build_channel_gate_keyboard(locale: str, channel_url: str) -> InlineKeyboardMarkup:
+_CHANNEL_LABELS = {
+    "@RadioAnimes": "🎧 Rádio Animes",
+    "@QG_BALTIGO": "🏠 QG Baltigo",
+}
+
+
+def _channel_url(channel: str) -> str:
+    channel = str(channel or "").strip()
+    if channel.startswith("@"):
+        return f"https://t.me/{channel[1:]}"
+    if channel.startswith("http://") or channel.startswith("https://"):
+        return channel
+    return f"https://t.me/{channel.lstrip('@')}"
+
+
+def _channel_label(channel: str) -> str:
+    channel = str(channel or "").strip()
+    return _CHANNEL_LABELS.get(channel, f"📢 {channel.lstrip('@').replace('_', ' ').title() or 'Canal'}")
+
+
+def build_channel_gate_keyboard(locale: str, channels: tuple[str, ...]) -> InlineKeyboardMarkup:
+    buttons = [
+        InlineKeyboardButton(_channel_label(channel), url=_channel_url(channel))
+        for channel in channels
+    ]
+    rows = [buttons[index : index + 2] for index in range(0, len(buttons), 2)]
+    rows.append([InlineKeyboardButton(t(locale, "buttons.recheck_access"), callback_data="gate:recheck")])
+    rows.append([InlineKeyboardButton(t(locale, "buttons.change_language"), callback_data="lang:open")])
     return InlineKeyboardMarkup(
-        [
-            [InlineKeyboardButton(t(locale, "buttons.join_channel"), url=channel_url)],
-            [InlineKeyboardButton(t(locale, "buttons.recheck_access"), callback_data="gate:recheck")],
-            [InlineKeyboardButton(t(locale, "buttons.change_language"), callback_data="lang:open")],
-        ]
+        rows
     )
 
 

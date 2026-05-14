@@ -192,7 +192,7 @@ class Gatekeeper:
         replace: bool = False,
     ) -> Message:
         text = build_channel_gate_text(locale)
-        reply_markup = build_channel_gate_keyboard(locale, self._channel_url)
+        reply_markup = build_channel_gate_keyboard(locale, self._channel_chat_ids)
         if replace:
             try:
                 await message.edit_text(
