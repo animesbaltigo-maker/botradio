@@ -121,7 +121,8 @@ async def required_channel_guard(update: Update, context: ContextTypes.DEFAULT_T
         raise ApplicationHandlerStop from exc
 
     if not is_member:
-        await gate.send_channel_gate(message, locale)
+        missing_channels = await gate.missing_channel_memberships(context, user.id, force_refresh=True)
+        await gate.send_channel_gate(message, locale, channels=missing_channels)
         raise ApplicationHandlerStop
 
 

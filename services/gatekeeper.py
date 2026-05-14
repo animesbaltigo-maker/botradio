@@ -84,7 +84,8 @@ class Gatekeeper:
         if not is_member:
             if pending_action is not None:
                 set_pending_action(context, pending_action)
-            await self.send_channel_gate(message, locale)
+            missing_channels = await self.missing_channel_memberships(context, user.id, force_refresh=True)
+            await self.send_channel_gate(message, locale, channels=missing_channels)
             await delete_message_safely(message)
             return None
 
@@ -129,7 +130,8 @@ class Gatekeeper:
                 await query.answer(strip_html(t(locale, "gate.channel.body"))[:180], show_alert=True)
             except Exception:
                 LOGGER.exception("Falha ao responder callback de canal")
-            await self.send_channel_gate(query.message, locale)
+            missing_channels = await self.missing_channel_memberships(context, user.id, force_refresh=True)
+            await self.send_channel_gate(query.message, locale, channels=missing_channels)
             return None
 
         return AccessContext(locale=locale, selected_language=True, channel_member=True)
@@ -162,6 +164,39 @@ class Gatekeeper:
                 return stale_value
             raise LocalizedError("gate.channel_check_error") from exc
 
+    async def missing_channel_memberships(
+        self,
+        context: ContextTypes.DEFAULT_TYPE,
+        user_id: int,
+        *,
+        force_refresh: bool = False,
+    ) -> tuple[str, ...]:
+        if force_refresh:
+            await self._membership_cache.delete(f"channel:{user_id}")
+
+        missing: list[str] = []
+        for channel_chat_id in self._channel_chat_ids:
+            try:
+                member = await context.bot.get_chat_member(channel_chat_id, user_id)
+            except Exception as exc:
+                LOGGER.exception("Falha ao validar membro do canal", exc_info=exc)
+                missing.append(channel_chat_id)
+                continue
+
+            status = str(getattr(member, "status", "") or "").lower()
+            allowed = status in {"member", "administrator", "creator"}
+            if status == "restricted":
+                allowed = bool(getattr(member, "is_member", False))
+            if not allowed:
+                missing.append(channel_chat_id)
+
+        await self._membership_cache.set(
+            f"channel:{user_id}",
+            not missing,
+            self._membership_ttl_seconds,
+        )
+        return tuple(missing)
+
     async def send_language_picker(
         self,
         message: Message,
@@ -189,10 +224,11 @@ class Gatekeeper:
         message: Message,
         locale: str,
         *,
+        channels: tuple[str, ...] | None = None,
         replace: bool = False,
     ) -> Message:
         text = build_channel_gate_text(locale)
-        reply_markup = build_channel_gate_keyboard(locale, self._channel_chat_ids)
+        reply_markup = build_channel_gate_keyboard(locale, channels or self._channel_chat_ids)
         if replace:
             try:
                 await message.edit_text(
