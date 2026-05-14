@@ -33,6 +33,7 @@ from config import (
     PERSISTENCE_FILE,
     RADIO_ANIMES_CHANNEL_CHAT,
     RADIO_ANIMES_CHANNEL_URL,
+    RADIO_ANIMES_REQUIRED_CHANNELS,
 )
 from handlers.broadcast import broadcast_callbacks, broadcast_command, broadcast_message_router
 from handlers.control_block import control_block_callback_guard, control_block_message_guard
@@ -87,7 +88,7 @@ async def post_init(app: Application) -> None:
         ffmpeg_path=FFMPEG_PATH,
     )
     app.bot_data["gatekeeper"] = Gatekeeper(
-        RADIO_ANIMES_CHANNEL_CHAT,
+        RADIO_ANIMES_REQUIRED_CHANNELS or (RADIO_ANIMES_CHANNEL_CHAT,),
         RADIO_ANIMES_CHANNEL_URL,
         membership_ttl_seconds=CHANNEL_MEMBERSHIP_TTL_SECONDS,
     )

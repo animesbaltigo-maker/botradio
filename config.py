@@ -50,6 +50,12 @@ def _env_int_tuple(name: str) -> tuple[int, ...]:
     return tuple(dict.fromkeys(values))
 
 
+def _env_str_tuple(name: str, default: str) -> tuple[str, ...]:
+    raw = _env_str(name, default, allow_blank=True)
+    values = [chunk.strip() for chunk in raw.replace(";", ",").split(",") if chunk.strip()]
+    return tuple(dict.fromkeys(values))
+
+
 def _load_env_file(env_path: Path) -> None:
     if not env_path.exists():
         return
@@ -81,7 +87,11 @@ FFMPEG_PATH = _env_str("FFMPEG_PATH", "", allow_blank=True)
 MEDIA_CACHE_DIR = _env_str("MEDIA_CACHE_DIR", str(BASE_DIR / "cache"))
 PERSISTENCE_FILE = _env_str("PERSISTENCE_FILE", str(DATA_DIR / "radio_animes_state.pkl"))
 RADIO_ANIMES_CHANNEL_CHAT = _env_str("RADIO_ANIMES_CHANNEL_CHAT", "@RadioAnimes")
-RADIO_ANIMES_CHANNEL_URL = _env_str("RADIO_ANIMES_CHANNEL_URL", "https://t.me/RadioAnimes")
+RADIO_ANIMES_REQUIRED_CHANNELS = _env_str_tuple(
+    "RADIO_ANIMES_REQUIRED_CHANNELS",
+    "@RadioAnimes,@QG_BALTIGO",
+)
+RADIO_ANIMES_CHANNEL_URL = _env_str("RADIO_ANIMES_CHANNEL_FOLDER_URL", "https://t.me/addlist/F7In7PWb4s1iMWMx")
 CHANNEL_MEMBERSHIP_TTL_SECONDS = _env_float("CHANNEL_MEMBERSHIP_TTL_SECONDS", 300.0)
 APP_CONCURRENT_UPDATES = _env_int("APP_CONCURRENT_UPDATES", 256)
 APP_CONNECTION_POOL_SIZE = _env_int("APP_CONNECTION_POOL_SIZE", 256)

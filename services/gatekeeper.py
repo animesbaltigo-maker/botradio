@@ -33,12 +33,15 @@ class AccessContext:
 class Gatekeeper:
     def __init__(
         self,
-        channel_chat_id: str,
+        channel_chat_id: str | tuple[str, ...],
         channel_url: str,
         *,
         membership_ttl_seconds: float = 300.0,
     ) -> None:
-        self._channel_chat_id = channel_chat_id
+        if isinstance(channel_chat_id, str):
+            self._channel_chat_ids = (channel_chat_id,) if channel_chat_id else ()
+        else:
+            self._channel_chat_ids = tuple(channel for channel in channel_chat_id if channel)
         self._channel_url = channel_url
         self._membership_ttl_seconds = membership_ttl_seconds
         self._membership_cache: AsyncTTLCache[bool] = AsyncTTLCache()
@@ -223,10 +226,12 @@ class Gatekeeper:
         context: ContextTypes.DEFAULT_TYPE,
         user_id: int,
     ) -> bool:
-        member = await context.bot.get_chat_member(self._channel_chat_id, user_id)
-        status = str(getattr(member, "status", "") or "").lower()
-        if status in {"member", "administrator", "creator"}:
-            return True
-        if status == "restricted":
-            return bool(getattr(member, "is_member", False))
-        return False
+        for channel_chat_id in self._channel_chat_ids:
+            member = await context.bot.get_chat_member(channel_chat_id, user_id)
+            status = str(getattr(member, "status", "") or "").lower()
+            allowed = status in {"member", "administrator", "creator"}
+            if status == "restricted":
+                allowed = bool(getattr(member, "is_member", False))
+            if not allowed:
+                return False
+        return True
